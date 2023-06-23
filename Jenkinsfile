@@ -34,9 +34,8 @@ pipeline {
                 sh 'docker push "$ECR_REGISTRY/$APP_REPO_NAME":""$BUILD_ID""'
             }
         }
-        }
-
     }
+    
     post {
         always {
             echo 'Deleting all local images'
