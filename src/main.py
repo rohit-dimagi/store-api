@@ -11,6 +11,11 @@ logger.info("staring app server..")
 app = FastAPI()
 db = SessionLocal()
 
+
+@app.get('/ready', status_code=status.HTTP_200_OK)
+def readiness():
+    return {"ready": "true"}
+
 @app.get('/get/messages/{account_id}', response_model=List[Item], status_code=status.HTTP_200_OK)
 def get_all_msg(account_id:str):
     logger.info(f"Getting all the msg for Account ID: {account_id}")
