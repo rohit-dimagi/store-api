@@ -9,4 +9,6 @@ RUN pip install -r requirements.txt
 
 COPY src .
 
+RUN chmod 755 entrypoint.sh
+
 CMD ["./entrypoint.sh"]
