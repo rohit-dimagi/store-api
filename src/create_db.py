@@ -1,6 +1,6 @@
-from database import Base, engine
-
 from loguru import logger
+
+from database import Base, engine
 
 try:
     logger.info("Running DB Migration..")
