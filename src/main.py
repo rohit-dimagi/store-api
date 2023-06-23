@@ -1,31 +1,21 @@
 from fastapi import FastAPI, status, Query
-from pydantic import BaseModel, constr, Field
 from typing import List
-from uuid import UUID, uuid4
 from database import SessionLocal
 import models
-from utils import PhoneNumber
+from utils import Item
 from utils import SanitizeQueryParam
+from loguru import logger
 
+
+logger.info("staring app server..")
 app = FastAPI()
-
-class Item(BaseModel):
-    account_id:constr(regex=r'^[a-zA-Z0-9]+$')
-    message_id: UUID = Field(default_factory=uuid4)
-    sender_number: PhoneNumber
-    receiver_number: PhoneNumber
-
-    class Config:
-        orm_mode=True
-
 db = SessionLocal()
 
 @app.get('/get/messages/{account_id}', response_model=List[Item], status_code=status.HTTP_200_OK)
 def get_all_msg(account_id:str):
+    logger.info(f"Getting all the msg for Account ID: {account_id}")
     items=db.query(models.Item).filter(models.Item.account_id==account_id).all()
     return items
-
-
 
 
 @app.get('/search', response_model=List[Item], status_code=status.HTTP_200_OK)
@@ -35,27 +25,21 @@ def search_messages(
     receiver_number: str = Query(None, description="Comma-separated receiver numbers")
 ):
     if message_id:
-        if "," in message_id:
-            message_id=message_id.strip('"').split(",")
-        else:
-            message_id=[message_id.strip('"')]
+        message_id=SanitizeQueryParam().sanitize_input(message_id)
+        logger.info(f"Searching messages record for message ID: {message_id}")
         items=db.query(models.Item).filter(models.Item.message_id.in_(message_id)).all()
         return items
     
     if sender_number:
-        if "," in sender_number:
-            sender_number=sender_number.strip('"').split(",")
-        else:
-            sender_number=[sender_number.strip('"')]
+        sender_number=SanitizeQueryParam().sanitize_input(sender_number)
+        logger.info(f"Searching messages records from Sender Number: {sender_number}")
         items=db.query(models.Item).filter(models.Item.sender_number.in_(sender_number)).all()
         return items
     
 
     if receiver_number:
-        if "," in receiver_number:
-            receiver_number=receiver_number.strip('"').split(",")
-        else:
-            receiver_number=[receiver_number.strip('"')]
+        receiver_number=SanitizeQueryParam().sanitize_input(receiver_number)
+        logger.info(f"Searching messages records to Reciever Number: {receiver_number}")
         items=db.query(models.Item).filter(models.Item.receiver_number.in_(receiver_number)).all()
         return items
     
@@ -69,6 +53,7 @@ def create_item(item:Item):
         receiver_number=item.receiver_number,
         sender_number=item.sender_number
     )
+    logger.info(f"Creating a new Msg record for Account ID: {item.account_id}")
     db.add(new_item)
     db.commit()
 
